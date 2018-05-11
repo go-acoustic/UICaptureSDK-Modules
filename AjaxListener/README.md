@@ -4,7 +4,7 @@
 The Ajax Listener module implements functionality which allows the automatic logging of Ajax request and response data by the UI Capture SDK. This is accomplished by overriding the native XMLHttpRequest (XHR) prototype object's open method and proxying the setRequestHeader and send methods. The Ajax Listener module may be useful in deployments where XHR data would otherwise not be captured in a Tealeaf session.
 
 Apart from the Ajax Listener module, other mechanisms available to log the XHR request and response data include:
-- TLT.logCustomEvent API
+#### TLT.logCustomEvent API
 This is an alternative client side solution capable of logging any client-side data including Ajax request and response data. This solution requires manual instrumentation of the application's XHR calls. This avoids overriding native XHR methods, does not require any module extension and uses an application data logging API provided by the UI Capture SDK.
 
 For further information on the TLT.logCustomEvent API refer to the [UI Capture SDK documentation](https://developer.ibm.com/customer-engagement/docs/watson-marketing/ibm-watson-customer-experience-analytics/tealeaf-ui-capture/cxa_uicapture_public_api_reference/)
@@ -15,8 +15,8 @@ For further information on the TLT.logCustomEvent API refer to the [UI Capture S
 ## INSTALLATION
 The Ajax Listener module is compatible with UI Capture SDK version 5.2.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
 
-Component | Comment
---------- | -------
+Component | Description
+--------- | -----------
 pako JS | gzip encoder
 tealeaf JS | W3C or jQuery flavor of the UI Capture SDK
 Optional modules | Ajax Listener or other custom modules
@@ -37,11 +37,13 @@ To enable the Ajax Listener module add the following section to the `core` confi
     }
 ```
 With this basic configuration, the Ajax Listener module is enabled to start monitoring XHR calls on the page after the UI Capture SDK is initialized. The following information will be logged in the Tealeaf session for each XHR call:
+
 Property | Description
 -------- | -----------
 url | Request URL
 method | HTTP request method e.g. GET, POST
 status | HTTP response status code
+async | True for an asynchronous request
 time | milliseconds from request send to complete (readyState == 4)
 
 The Ajax Listener module can also be configured to selectively log XHR requests and responses by adding the following section to the `modules` configuration of the UI Capture SDK:
@@ -63,6 +65,7 @@ The Ajax Listener module can also be configured to selectively log XHR requests 
     }
 ```
 The `filters` array can contain one or more filter rules. Each rule can optionally specify any combination of the following filter properties in RegEx format:
+
 Filter Property | Description
 --------------- | -----------
 url | RegEx to match the request URL
@@ -70,8 +73,9 @@ method | RegEx to match the HTTP request method
 status | RegEx to match the HTTP response status
 
 To fine tune the XHR data being logged, each filter rule can be optionally associated with a data logging criteria specifying which XHR data should be logged when the XHR request matches the filter rule. The following additional data can be logged for each XHR request:
-Additional Data Logging | Description
------------------------ | -----------
+
+Optional Data Logging | Description
+--------------------- | -----------
 reqHeaders | XHR request headers set using the setRequestHeader function.
 reqData | XHR request data text. If this is valid JSON, the data will be parsed into a JSON object.
 rspHeaders | XHR response headers.
@@ -156,6 +160,7 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
 
 ## DATA FORMAT
 The data logged by the Ajax Listener is as follows:
+
 Property | Optional | Description
 -------- | -------- | -----------
 method | no | XHR request method e.g. GET, POST etc.
@@ -208,7 +213,7 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
             }
         }
     }
-
+```
 
 ## TOOLS & REFERENCES
 * [UI Capture SDK Documentation]()
@@ -216,7 +221,7 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
 * [Telerik Fiddler](https://www.telerik.com/fiddler)
 
 ## ISSUES:
-Report any issues with the Ajax Listener module via IBM Support or directly on [Github](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/)
+Report any issues with the Ajax Listener module via [IBM Support](https://www.ibm.com/support/home/) or directly on [Github](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/)
 For a speedy resolution, please follow this template when reporting an issue:
 
 #### Current Behavior
@@ -238,6 +243,7 @@ If the issue is readily reproducible with any browser / OS then skip this sectio
 If you have tested a workaround or possible solution, describe the solution in detail.
 
 #### Attachments
-1. UI Capture SDK Configuration (REQUIRED)
+1. UI Capture SDK Configuration
 2. Fiddler session (Optional)
-:warning: **WARNING: Only provide test data. DO NOT attach any user data/session.**
+
+:warning: **Only provide test data. DO NOT attach any user data/session.**
