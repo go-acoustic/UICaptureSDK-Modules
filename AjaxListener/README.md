@@ -13,7 +13,7 @@ For further information on the TLT.logCustomEvent API refer to the [UI Capture S
 **The Ajax Listener module makes it possible to log application and user data to a Tealeaf session. It is your responsibility to thoroughly test your application and validate the data that is being captured before deploying this module into a production setting.**
 
 ## INSTALLATION
-The Ajax Listener module is compatible with UI Capture SDK version 5.2.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
+The Ajax Listener module (ver. 1.1.0) is compatible with UI Capture SDK version 5.5.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
 
 Component | Description
 --------- | -----------
@@ -40,11 +40,12 @@ With this basic configuration, the Ajax Listener module is enabled to start moni
 
 Property | Description
 -------- | -----------
-url | Request URL
-method | HTTP request method e.g. GET, POST
+requestURL | Request URL
+method | HTTP request method e.g. "GET", "POST"
 status | HTTP response status code
+statusText | HTTP response status text e.g. "OK"
 async | True for an asynchronous request
-time | milliseconds from request send to complete (readyState == 4)
+ajaxResponseTime | milliseconds from request send to complete (readyState == 4)
 
 The Ajax Listener module can also be configured to selectively log XHR requests and responses by adding the following section to the `modules` configuration of the UI Capture SDK:
 ```javascript
@@ -55,10 +56,10 @@ The Ajax Listener module can also be configured to selectively log XHR requests 
                 url: { regex: "api", flags: "i" },
                 status: { regex: "4\\d\\d", flags: "" },
                 log: {
-                    reqHeaders: true,
-                    reqData: false,
-                    rspHeaders: false,
-                    rspData: true
+                    requestHeaders: true,
+                    requestData: false,
+                    responseHeaders: false,
+                    responseData: true
                 }
             }
         ]
@@ -76,19 +77,19 @@ To fine tune the XHR data being logged, each filter rule can be optionally assoc
 
 Optional Data Logging | Description
 --------------------- | -----------
-reqHeaders | XHR request headers set using the setRequestHeader function.
-reqData | XHR request data text. If this is valid JSON, the data will be parsed into a JSON object.
-rspHeaders | XHR response headers.
-rspData | XHR response data text. If this is valid JSON, the data will be parsed into a JSON object.
+requestHeaders | XHR request headers set using the setRequestHeader function.
+requestData | XHR request data text. If this is valid JSON, the data will be parsed into a JSON object.
+responseHeaders | XHR response headers.
+responseData | XHR response data text. If this is valid JSON, the data will be parsed into a JSON object.
 
-When specifying multiple filter rules, remember to place the more restrictive/specific rules before the more generic rules. The Ajax Listener will use the first matching filter that applies to a given XHR request.
+When specifying multiple filter rules, remember to place the more restrictive/specific rules before the more generic rules. The module will use the first matching filter that applies to a given XHR request.
 
 ### Filtering Examples
 #### Logging the request headers of all XHR requests
 ```javascript
     {
         log: {
-            reqHeaders: true
+            requestHeaders: true
         }
     }
 ```
@@ -98,7 +99,7 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
     {
         method: { regex: "GET", flags: "i" },
         log: {
-            rspData: true
+            responseData: true
         }
     }
 ```
@@ -115,10 +116,10 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
     {
         url: { regex: "debug=on(&|$)" },
         log: {
-            reqHeaders: true,
-            reqData: true,
-            rspHeaders: true,
-            rspData: true
+            requestHeaders: true,
+            requestData: true,
+            responseHeaders: true,
+            responseData: true
         }
     },
     {
@@ -131,8 +132,8 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
     {
         status: { regex: "^4\\d\\d$" },
         log: {
-            reqHeaders: true,
-            reqData: true
+            requestHeaders: true,
+            requestData: true
         }
     },
     {
@@ -145,15 +146,15 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
     {
         url: { regex: "\/api\/getAccountDetails" },
         log: {
-            reqHeaders: true,
-            reqData: true,
-            rspHeaders: true,
-            rspData: true
+            requestHeaders: true,
+            requestData: true,
+            responseHeaders: true,
+            responseData: true
         }
     },
     {
         log: {
-            reqHeaders: true
+            requestHeaders: true
         }
     }
 ```
@@ -164,51 +165,54 @@ The data logged by the Ajax Listener is as follows:
 Property | Optional | Description
 -------- | -------- | -----------
 method | no | XHR request method e.g. GET, POST etc.
-url | no | XHR request url host and path
-origUrl | no | XHR request url
+requestURL | no | XHR request url host and path
 async | no | Boolean flag indicating if the XHR request was asynchronous.
 status | no | HTTP status code
-time | no | Milliseconds from request send to request complete (readyState = 4)
-reqHeaders | yes | Object containing name-value pairs of HTTP headers that are set using the setRequestHeader() method.
-rspHeaders | yes | Object containing name-value pairs of HTTP headers sent with the response.
-reqData | yes | String containing the request data passed to the send method. If the data is valid JSON then reqData contains the parsed JSON.
-rspData | yes | String containing the response data. If the data is valid JSON then rspData contains the parsed JSON.
+statusText | no | HTTP status text
+ajaxResponseTime | no | Milliseconds from request send to request complete (readyState = 4)
+requestHeaders | yes | Object containing name-value pairs of HTTP headers that are set using the setRequestHeader() method.
+responseHeaders | yes | Object containing name-value pairs of HTTP headers sent with the response.
+request | yes | String containing the request data passed to the send method. If the data is valid JSON then request contains the parsed JSON.
+response | yes | String containing the response data. If the data is valid JSON then response contains the parsed JSON.
 
 Following is an example of the XHR data that is logged by the Ajax Listener in the Tealeaf session:
 ```javascript
     {
-        "type": 17,
+        "type": 5,
         "offset": 9182,
         "screenviewOffset": 9171,
         "count": 4,
         "fromWeb": true,
-        "xhr": {
-            "url": "www.ibm.com/api/getAccountDetails",
-            "origUrl": "/api/getAccountDetails?id=D295024&cat=2&debug=on",
-            "method": "GET",
-            "status": 200,
-            "async": true,
-            "time": 785,
-            "reqHeaders": {
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CustomerId": "D295024"
-            },
-            "rspHeaders": {
-                "date": "Thu, 22 Feb 2018 01:38:07 GMT",
-                "cache-control": "private",
-                "server": "Microsoft-IIS/10.0",
-                "x-powered-by": "ASP.NET",
-                "content-length": "318",
-                "content-type": "application/json"
-            },
-            "rspData": {
-                accountDetails: {
-                    "id": "D295024",
-                    "memberSince": "15 July 2012",
-                    "cardHolderType": "G",
-                    "electronicDelivery": false,
-                    "currencyUnit": "USD",
-                    "currencyAmount": 423.15
+        "customEvent": {
+            "name": "ajaxListener",
+            "data": {
+                "requestURL": "www.ibm.com/api/getAccountDetails",
+                "method": "GET",
+                "status": 200,
+                "statusText": "OK",
+                "async": true,
+                "ajaxResponseTime": 285,
+                "requestHeaders": {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CustomerId": "D295024"
+                },
+                "responseHeaders": {
+                    "date": "Thu, 22 Feb 2018 01:38:07 GMT",
+                    "cache-control": "private",
+                    "server": "Microsoft-IIS/10.0",
+                    "x-powered-by": "ASP.NET",
+                    "content-length": "318",
+                    "content-type": "application/json"
+                },
+                "response": {
+                    accountDetails: {
+                        "id": "D295024",
+                        "memberSince": "15 July 2012",
+                        "cardHolderType": "G",
+                        "electronicDelivery": false,
+                        "currencyUnit": "USD",
+                        "currencyAmount": 423.15
+                    }
                 }
             }
         }
