@@ -252,9 +252,8 @@ TLT.addModule("ajaxListener", function (context) {
         var queueServiceConfig = TLT.getServiceConfig("queue");
         var queues = queueServiceConfig.queues || [];
 
-        for (i = 0; i < queues.length; i += 1) {
-            endpointURL = queues[i].endpoint.split("collectorPost")[0];
-            if(url.indexOf(endpointURL) !== -1) {
+        for (var i = 0; i < queues.length; i += 1) {
+            if(queues[i].endpoint && url.indexOf(queues[i].endpoint) !== -1) {
                 return true;
             }
         }
