@@ -19,6 +19,8 @@
 /*global TLT:true */
 
 TLT.addModule("ajaxListener", function (context) {
+    "use strict";
+
     var moduleConfig = {},
         moduleLoaded = false,
         nativeXHROpen,
@@ -110,7 +112,8 @@ TLT.addModule("ajaxListener", function (context) {
                 }
             },
             dummyLink,
-            xhrMsg = msg.customEvent.data;
+            xhrMsg = msg.customEvent.data,
+            respText;
 
         // Sanity check
         if (!xhr) {
@@ -142,14 +145,22 @@ TLT.addModule("ajaxListener", function (context) {
         if (logOptions.responseHeaders) {
             xhrMsg.responseHeaders = extractResponseHeaders(xhr.getAllResponseHeaders());
         }
-        if (logOptions.responseData && typeof xhr.responseText === "string") {
-            try {
-                xhrMsg.response = JSON.parse(xhr.responseText);
-            } catch (e2) {
-                xhrMsg.response = xhr.responseText;
+        if (logOptions.responseData) {
+            if (typeof xhr.response === "string") {
+                respText = xhr.response;
+            } else if (!xhr.response && typeof xhr.responseText === "string") {
+                respText = xhr.responseText;
             }
-            if (xhr.responseType) {
-                xhrMsg.responseType = xhr.responseType;
+
+            if (respText) {
+                try {
+                    xhrMsg.response = JSON.parse(respText);
+                } catch (e2) {
+                    xhrMsg.response = respText;
+                }
+                if (xhr.responseType) {
+                    xhrMsg.responseType = xhr.responseType;
+                }
             }
         }
         context.post(msg);
@@ -249,11 +260,13 @@ TLT.addModule("ajaxListener", function (context) {
      * @param {String} url
      */
     function isSystemXHR(url) {
-        var queueServiceConfig = TLT.getServiceConfig("queue");
-        var queues = queueServiceConfig.queues || [];
+        var i, queueServiceConfig, queues;
 
-        for (var i = 0; i < queues.length; i += 1) {
-            if(queues[i].endpoint && url.indexOf(queues[i].endpoint) !== -1) {
+        queueServiceConfig = TLT.getServiceConfig("queue");
+        queues = queueServiceConfig.queues || [];
+
+        for (i = 0; i < queues.length; i += 1) {
+            if (queues[i].endpoint && url.indexOf(queues[i].endpoint) !== -1) {
                 return true;
             }
         }
@@ -359,7 +372,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.1.0"
+        version: "1.1.1"
     };
 
 });
