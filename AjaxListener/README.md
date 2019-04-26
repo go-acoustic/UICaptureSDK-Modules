@@ -230,6 +230,9 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
 Report any issues with the Ajax Listener module via [IBM Support](https://www.ibm.com/support/home/) or directly on [Github](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/)
 For a speedy resolution, please follow this template when reporting an issue:
 
+#### Module Version
+The module version can be obtained by typing `TLT.getModule("ajaxListener").version` in the console. Alternatively, you can scan the source for the `version` string.
+
 #### Current Behavior
 e.g. Ajax Listener does not log HTTP status code for all XHR requests made to /api/getAccountDetails
 
