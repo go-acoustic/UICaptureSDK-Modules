@@ -123,7 +123,8 @@ TLT.addModule("ajaxListener", function (context) {
         dummyLink = document.createElement("a");
         dummyLink.href = xhr.tListener.url;
 
-        xhrMsg.requestURL = dummyLink.host + dummyLink.pathname;
+        xhrMsg.originalURL = dummyLink.host + dummyLink.pathname;
+        xhrMsg.requestURL = context.normalizeUrl(dummyLink.host + dummyLink.pathname);
         xhrMsg.description = "Full Ajax Monitor " + xhr.tListener.url;
         xhrMsg.method = xhr.tListener.method;
         xhrMsg.status = xhr.status;
@@ -146,10 +147,14 @@ TLT.addModule("ajaxListener", function (context) {
             xhrMsg.responseHeaders = extractResponseHeaders(xhr.getAllResponseHeaders());
         }
         if (logOptions.responseData) {
-            if (typeof xhr.response === "string") {
-                respText = xhr.response;
-            } else if (!xhr.response && typeof xhr.responseText === "string") {
+            if (typeof xhr.responseType === "undefined") {
                 respText = xhr.responseText;
+            } else if (xhr.responseType === "" || xhr.responseType ==="text"){
+                respText = xhr.response;
+            } else if (xhr.responseType === "json") {
+                xhrMsg.response = xhr.response;
+            } else {
+                xhrMsg.response = typeof xhr.response;
             }
 
             if (respText) {
@@ -158,9 +163,10 @@ TLT.addModule("ajaxListener", function (context) {
                 } catch (e2) {
                     xhrMsg.response = respText;
                 }
-                if (xhr.responseType) {
-                    xhrMsg.responseType = xhr.responseType;
-                }
+            }
+
+            if (xhr.responseType) {
+                xhrMsg.responseType = xhr.responseType;
             }
         }
         context.post(msg);
@@ -372,7 +378,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.1.1"
+        version: "1.1.2"
     };
 
 });
