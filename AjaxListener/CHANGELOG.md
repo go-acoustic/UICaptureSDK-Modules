@@ -1,3 +1,6 @@
+## 1.1.3
+- Fix compatibility issue with older version of SDK (<V5.6) ([#5](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/5))
+
 ## 1.1.2
 
 - Fix console error when XHR is set with responseType other than "" or "text" ([#2](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/2))

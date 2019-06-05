@@ -124,7 +124,7 @@ TLT.addModule("ajaxListener", function (context) {
         dummyLink.href = xhr.tListener.url;
 
         xhrMsg.originalURL = dummyLink.host + dummyLink.pathname;
-        xhrMsg.requestURL = context.normalizeUrl(dummyLink.host + dummyLink.pathname);
+        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(dummyLink.host + dummyLink.pathname) : xhrMsg.originalURL;
         xhrMsg.description = "Full Ajax Monitor " + xhr.tListener.url;
         xhrMsg.method = xhr.tListener.method;
         xhrMsg.status = xhr.status;
@@ -378,7 +378,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.1.2"
+        version: "1.1.3"
     };
 
 });
