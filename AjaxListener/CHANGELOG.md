@@ -1,5 +1,10 @@
+## 1.1.4
+- Fix format of captured Url (issue in IE11) ([#6](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/6))
+
+
 ## 1.1.3
 - Fix compatibility issue with older version of SDK (<V5.6) ([#5](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/5))
+
 
 ## 1.1.2
 

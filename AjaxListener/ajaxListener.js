@@ -1,10 +1,11 @@
 /*!
- * Licensed Materials - Property of IBM
- * © Copyright IBM Corp. 2018
- * US Government Users Restricted Rights - Use, duplication or disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ * Copyright (c) 2019 Acoustic, L.P. All rights reserved.
  *
- * LICENSE
- * https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/tree/master/AjaxListener/LICENSE
+ * NOTICE: This file contains material that is confidential and proprietary to
+ * Acoustic, L.P. and/or other developers. No license is granted under any intellectual or
+ * industrial property rights of Acoustic, L.P. except as may be provided in an agreement with
+ * Acoustic, L.P. Any unauthorized copying or distribution of content from this file is
+ * prohibited.
  *
  * README
  * https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/tree/master/AjaxListener/README.md
@@ -123,9 +124,9 @@ TLT.addModule("ajaxListener", function (context) {
         dummyLink = document.createElement("a");
         dummyLink.href = xhr.tListener.url;
 
-        xhrMsg.originalURL = dummyLink.host + dummyLink.pathname;
-        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(dummyLink.host + dummyLink.pathname) : xhrMsg.originalURL;
-        xhrMsg.description = "Full Ajax Monitor " + xhr.tListener.url;
+        xhrMsg.originalURL = dummyLink.host + (dummyLink.pathname[0] === "/" ? "" : "/") + dummyLink.pathname;
+        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(xhrMsg.originalURL) : xhrMsg.originalURL;
+        xhrMsg.description = "Full Ajax Monitor " + xhrMsg.requestURL;
         xhrMsg.method = xhr.tListener.method;
         xhrMsg.status = xhr.status;
         xhrMsg.statusText = xhr.statusText || "";
@@ -149,7 +150,7 @@ TLT.addModule("ajaxListener", function (context) {
         if (logOptions.responseData) {
             if (typeof xhr.responseType === "undefined") {
                 respText = xhr.responseText;
-            } else if (xhr.responseType === "" || xhr.responseType ==="text"){
+            } else if (xhr.responseType === "" || xhr.responseType === "text") {
                 respText = xhr.response;
             } else if (xhr.responseType === "json") {
                 xhrMsg.response = xhr.response;
@@ -378,7 +379,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.1.3"
+        version: "1.1.4"
     };
 
 });
