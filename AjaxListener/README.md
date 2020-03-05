@@ -1,7 +1,7 @@
 # README for the Ajax Listener module
 
 ## INTRODUCTION
-The Ajax Listener module implements functionality which allows the automatic logging of XMLHttpRequest (XHR) request and response data by the UI Capture SDK. This is accomplished by overriding the native XHR prototype object's open method and proxying the setRequestHeader and send methods. The Ajax Listener module may be useful in deployments where XHR data would otherwise not be captured in a Tealeaf session.
+The Ajax Listener module implements functionality which allows the automatic logging of XMLHttpRequest (XHR) request and response data by the UI Capture SDK. This is accomplished by overriding the native XHR prototype object's open method and proxying the setRequestHeader and send methods. The Ajax Listener module may be useful in deployments where XHR data would otherwise not be captured in a Tealeaf session. Starting from Version 1.2.0, the Ajax Listener module supports automatic logging of request and response data through Fetch API.
 
 Apart from the Ajax Listener module, other mechanisms available to log the XHR request and response data include:
 #### TLT.logCustomEvent API
@@ -13,6 +13,8 @@ For further information on the TLT.logCustomEvent API refer to the [UI Capture S
 **The Ajax Listener module makes it possible to log application and user data to a Tealeaf session. It is your responsibility to thoroughly test your application and validate the data that is being captured before deploying this module into a production setting.**
 
 **The module only logs XHR data. It does not listen to other forms of network communication such as fetch or sendBeacon.**
+
+**Version 1.2.0 starts to support logging of fetch data.**
 
 ## INSTALLATION
 The Ajax Listener module (ver. 1.1.0) is compatible with UI Capture SDK version 5.5.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
@@ -218,6 +220,20 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
                 }
             }
         }
+    }
+```
+
+## Capture Fetch data ( >= Version 1.2.0)
+Capturing fetch data is enabled by default. This function will be automatically turned off in browsers which do not support Fetch API.
+
+The same filtering configuration is applicable to both XHR and Fetch data capture.
+
+To disable Fetch data capture or XHR data capture, explicitly add the setting to disable the feature. 
+```javascript
+    ajaxListener: {
+        xhrEnabled: false,
+        fetchEnabled: false,
+        ...
     }
 ```
 
