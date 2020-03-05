@@ -1,5 +1,5 @@
 /*!
- * Copyright (c) 2019 Acoustic, L.P. All rights reserved.
+ * Copyright (c) 2020 Acoustic, L.P. All rights reserved.
  *
  * NOTICE: This file contains material that is confidential and proprietary to
  * Acoustic, L.P. and/or other developers. No license is granted under any intellectual or
@@ -25,23 +25,25 @@ TLT.addModule("ajaxListener", function (context) {
     var moduleConfig = {},
         moduleLoaded = false,
         nativeXHROpen,
+        nativeFetch,
+        xhrEnabled,
+        fetchEnabled,
         utils = context.utils;
 
     /**
      * Search the list of filters and return the 1st filter that completely
      * matches the XHR object. Filter properties include url, method and status.
-     * @param {XMLHttpRequest} xhr The XMLHttpRequest object.
+     * @param {String} url The request url
+     * @param {String} method The request method, e.g. post, get, etc
+     * @param {String} status The response status
      * @returns {Object} An empty object if no filters have been configured. Else
      * returns the matching filter object or null if no object matches.
      */
-    function getMatchingFilter(xhr) {
+    function getMatchingFilter(url, method, status) {
         var i, len,
             filter = {},
             filters = moduleConfig.filters,
-            matchFound,
-            url = xhr.tListener.url,
-            method = xhr.tListener.method,
-            status = xhr.status.toString();
+            matchFound;
 
         // If no filter is configured return an empty object
         if (!filters || !filters.length) {
@@ -109,7 +111,9 @@ TLT.addModule("ajaxListener", function (context) {
                 type: 5,
                 customEvent: {
                     name: "ajaxListener",
-                    data: {}
+                    data: {
+                        interfaceType: "XHR"
+                    }
                 }
             },
             dummyLink,
@@ -173,6 +177,128 @@ TLT.addModule("ajaxListener", function (context) {
         context.post(msg);
     }
 
+    function getEntries(object) {
+        var pair,
+            obj = {},
+            objEntries = object.entries(),
+            objEntry = objEntries.next();
+
+        while (!objEntry.done) {
+            pair = objEntry.value;
+            obj[pair[0]] = pair[1];
+            objEntry = objEntries.next();
+        }
+
+        return obj;
+    }
+
+    /**
+     * Extract key => value pairs from fecth request/response headers.
+     * @param {Object} headers fecth request/response headers
+     * @return {Object} Returns an object where every key is a header
+     *     and every value it's corresponding value.
+     */
+    function extractFetchHeaders(headers) {
+        return getEntries(headers);
+    }
+
+    /**
+     * Extract body of request based on types
+     * supported types are string, json object, FormData object.
+     * the rest types are returned as it is.
+     * @param {Object} body fecth request body
+     * @return {Object} Return a string, or an object
+     */
+    function extractFetchRequestBody(body) {
+        if (typeof body === "object" && body.toString().indexOf("FormData") !== -1) {
+            return getEntries(body);
+        }
+
+        return body;
+    }
+
+    /**
+     * Posts the fetch request/response information to the queue. The URL, method, status and time
+     * fields are mandatory. The request/response headers and body are
+     * added as per the options specified.
+     * @param {Object} fetchReq The fetch request object to be recorded.
+     * @param {Object} fetchResp The fetch response object to be recorded.
+     * @param {Object} logOptions An object specifying if the request and
+     *                 response headers and data should be recorded.
+     */
+    function logFetch(fetchReq, fetchResp, logOptions) {
+        var msg = {
+                type: 5,
+                customEvent: {
+                    name: "ajaxListener",
+                    data: {
+                        interfaceType: "fetch"
+                    }
+                }
+            },
+            dummyLink,
+            xhrMsg = msg.customEvent.data,
+            respText,
+            respContentType;
+
+        dummyLink = document.createElement("a");
+        dummyLink.href = fetchReq.url;
+
+        xhrMsg.originalURL = dummyLink.host + (dummyLink.pathname[0] === "/" ? "" : "/") + dummyLink.pathname;
+        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(xhrMsg.originalURL) : xhrMsg.originalURL;
+        xhrMsg.description = "Full Ajax Monitor " + xhrMsg.requestURL;
+        xhrMsg.method = fetchReq.initData.method;
+        xhrMsg.status = fetchResp.status;
+        xhrMsg.statusText = fetchResp.statusText || "";
+        xhrMsg.async = true;
+        xhrMsg.ajaxResponseTime = fetchReq.end - fetchReq.start;
+        xhrMsg.responseType = fetchResp.type;
+
+
+        if (logOptions.requestHeaders) {
+            //check if header data is encapsulated as "Headers" object which cannot be directly accessed
+            if (fetchReq.initData.headers && fetchReq.initData.headers.toString().indexOf("Headers") !== -1) {
+                xhrMsg.requestHeaders = extractFetchHeaders(fetchReq.initData.headers);
+            } else {
+                xhrMsg.requestHeaders = fetchReq.initData.headers || "";
+            }
+        }
+
+        if (logOptions.requestData && typeof fetchReq.body !== "undefined" && !fetchReq.isSystemXHR) {
+            xhrMsg.request = extractFetchRequestBody(fetchReq.body);
+        }
+
+        if (logOptions.responseHeaders) {
+            xhrMsg.responseHeaders = extractFetchHeaders(fetchResp.headers);
+        }
+
+        if (logOptions.responseData && fetchResp.ok) {
+            respContentType = fetchResp.headers.get("content-type");
+
+            if (respContentType && respContentType.indexOf("application/json") !== -1) {
+                fetchResp.clone().json().then(function (responseData) {
+                    xhrMsg.response = responseData;
+                    context.post(msg);
+                });
+                return;
+            }
+
+            if (respContentType && (respContentType.indexOf("text") !== -1 || respContentType.indexOf("xml") !== -1)) {
+                fetchResp.clone().text().then(function (responseData) {
+                    xhrMsg.response = responseData;
+                    context.post(msg);
+                });
+                return;
+            }
+
+            xhrMsg.response = "Not logging unsupported response content: " + respContentType;
+
+        }
+
+        context.post(msg);
+    }
+
+
     /**
      * Process the XHR object to check if it matches with a filter
      * and if so then log it.
@@ -180,6 +306,9 @@ TLT.addModule("ajaxListener", function (context) {
      */
     function processXHR(xhr) {
         var filter,
+            url = xhr.tListener.url,
+            method = xhr.tListener.method,
+            status = xhr.status.toString(),
             logOptions = {
                 requestHeaders: false,
                 requestData: false,
@@ -187,12 +316,39 @@ TLT.addModule("ajaxListener", function (context) {
                 responseData: false
             };
 
-        filter = getMatchingFilter(xhr);
+        filter = getMatchingFilter(url, method, status);
         if (filter) {
             if (filter.log) {
                 logOptions = filter.log;
             }
             logXHR(xhr, logOptions);
+        }
+    }
+
+    /**
+     * Process the fetch request & response to check if it matches with a filter
+     * and if so then log it.
+     * @param fetchReq {Request} The request object of fetch
+     * @param fetchResp {Response} The response object of fetch
+     */
+    function processFetch(fetchReq, fetchResp) {
+        var filter,
+            url = fetchReq.url,
+            method = fetchReq.initData.method,
+            status = fetchResp.status.toString(),
+            logOptions = {
+                requestHeaders: false,
+                requestData: false,
+                responseHeaders: false,
+                responseData: false
+            };
+
+        filter = getMatchingFilter(url, method, status);
+        if (filter) {
+            if (filter.log) {
+                logOptions = filter.log;
+            }
+            logFetch(fetchReq, fetchResp, logOptions);
         }
     }
 
@@ -322,6 +478,48 @@ TLT.addModule("ajaxListener", function (context) {
     }
 
     /**
+     * Override native fetch api
+     */
+    function addFetchHook() {
+        nativeFetch = window.fetch;
+
+        window.fetch = function (url, options) {
+            var fetchReq = {},
+                promise;
+
+            if (typeof url === "object") {
+                //fetch is evoked with a Request object
+                fetchReq.initData = url;
+                fetchReq.url = url.url;
+
+                //body in Request object cannot be directly accessed.
+                fetchReq.initData.clone().text().then(function (data) {
+                    if (data.length > 0) {
+                        fetchReq.body = data;
+                    }
+                });
+            } else {
+                //fetch is evoked with two parameters, url and initObject
+                fetchReq.initData = options || {};
+                fetchReq.url = url;
+                if (options.body) {
+                    fetchReq.body = options.body;
+                }
+            }
+            fetchReq.isSystemXHR = isSystemXHR(fetchReq.url);
+            fetchReq.start = Date.now();
+
+            promise = nativeFetch.apply(this, arguments);
+
+            return promise.then(function (response) {
+                fetchReq.end = Date.now();
+                processFetch(fetchReq, response);
+                return response;
+            });
+        };
+    }
+
+    /**
      * Cache the regex specified in the module configuration.
      * @param {Object} obj The property with the regex to be cached.
      */
@@ -351,6 +549,9 @@ TLT.addModule("ajaxListener", function (context) {
             filter = filters[i];
             utils.forEach([filter.url, filter.method, filter.status], cacheRegex);
         }
+
+        xhrEnabled = utils.getValue(config, "xhrEnabled", true);
+        fetchEnabled = utils.getValue(config, "fetchEnabled", true) && (typeof window.fetch === "function");
     }
 
     // Return the module's interface object. This contains callback functions which
@@ -368,7 +569,13 @@ TLT.addModule("ajaxListener", function (context) {
         onevent: function (webEvent) {
             switch (webEvent.type) {
             case "load":
-                addXHRHook();
+                if (xhrEnabled) {
+                    addXHRHook();
+                }
+
+                if (fetchEnabled) {
+                    addFetchHook();
+                }
                 moduleLoaded = true;
                 break;
             case "unload":
@@ -379,7 +586,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.1.4"
+        version: "1.2.0"
     };
 
 });
