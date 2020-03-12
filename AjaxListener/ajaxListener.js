@@ -502,7 +502,7 @@ TLT.addModule("ajaxListener", function (context) {
                 //fetch is evoked with two parameters, url and initObject
                 fetchReq.initData = options || {};
                 fetchReq.url = url;
-                if (options.body) {
+                if (options && options.body) {
                     fetchReq.body = options.body;
                 }
             }
@@ -586,7 +586,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.2.0"
+        version: "1.2.1"
     };
 
 });
