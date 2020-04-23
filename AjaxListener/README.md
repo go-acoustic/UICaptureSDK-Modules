@@ -1,23 +1,25 @@
 # README for the Ajax Listener module
 
 ## INTRODUCTION
-The Ajax Listener module implements functionality which allows the automatic logging of XMLHttpRequest (XHR) request and response data by the UI Capture SDK. This is accomplished by overriding the native XHR prototype object's open method and proxying the setRequestHeader and send methods. The Ajax Listener module may be useful in deployments where XHR data would otherwise not be captured in a Tealeaf session. Starting from Version 1.2.0, the Ajax Listener module supports automatic logging of request and response data through Fetch API.
+The Ajax Listener module implements functionality which allows the automatic logging of [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) (XHR) request and response data by the UI Capture SDK. This is accomplished by overriding the native XHR prototype object's open method and proxying the setRequestHeader and send methods. The Ajax Listener module may be useful in deployments where XHR data would otherwise not be captured in a Tealeaf session. Starting from version 1.2.0, the Ajax Listener module supports automatic logging of [Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) request and response data.
 
-Apart from the Ajax Listener module, other mechanisms available to log the XHR request and response data include:
+Apart from the Ajax Listener module, other mechanisms available to log the XHR and Fetch request and response data include:
 #### TLT.logCustomEvent API
-This is an alternative client side solution capable of logging any client-side data including Ajax request and response data. This solution requires manual instrumentation of the application's XHR calls. This avoids overriding native XHR methods, does not require any module extension and uses an application data logging API provided by the UI Capture SDK.
+This is an alternative client side solution capable of logging any client-side data including Ajax request and response data. This solution requires manual instrumentation of the application's XHR or Fetch calls. This avoids overriding native XHR and Fetch methods, does not require any module extension and uses an application data logging API provided by the UI Capture SDK.
 
-For further information on the TLT.logCustomEvent API refer to the [UI Capture SDK documentation](https://developer.ibm.com/customer-engagement/docs/watson-marketing/ibm-watson-customer-experience-analytics/tealeaf-ui-capture/cxa_uicapture_public_api_reference/)
+For further information on the TLT.logCustomEvent API refer to the [UI Capture SDK documentation](https://developer.goacoustic.com/acoustic-exp-analytics/docs/ui-capture-public-api-reference)
 
 ## :warning: IMPORTANT NOTE
 **The Ajax Listener module makes it possible to log application and user data to a Tealeaf session. It is your responsibility to thoroughly test your application and validate the data that is being captured before deploying this module into a production setting.**
 
-**The module only logs XHR data. It does not listen to other forms of network communication such as fetch or sendBeacon.**
+**The module only logs XHR data. It does not listen to other forms of network communication such as sendBeacon.**
 
-**Version 1.2.0 starts to support logging of fetch data.**
+**Version 1.2.0+ supports logging of Fetch data.**
+
+**This module has been tested with native browser implementations of XMLHttpRequest and Fetch. It is not recommended to use this module with XMLHttpRequest or Fetch polyfills.**
 
 ## INSTALLATION
-The Ajax Listener module (ver. 1.1.0) is compatible with UI Capture SDK version 5.5.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
+The Ajax Listener module is compatible with UI Capture SDK version 5.5.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
 
 Component | Description
 --------- | -----------
@@ -108,10 +110,10 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
     }
 ```
 
-#### Logging all XHR requests except those made to the IBM Cloud
+#### Logging all XHR requests except those made to the Acoustic Cloud
 ```javascript
     {
-        url: { regex: "^((?!(ibmcloud\\.com)).)*$", flags: "i" },
+        url: { regex: "^((?!(brilliantcollector\\.com)).)*$", flags: "i" },
     }
 ```
 
@@ -190,7 +192,7 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
         "customEvent": {
             "name": "ajaxListener",
             "data": {
-                "requestURL": "www.ibm.com/api/getAccountDetails",
+                "requestURL": "www.acoustic.com/api/getAccountDetails",
                 "method": "GET",
                 "status": 200,
                 "statusText": "OK",
@@ -209,7 +211,7 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
                     "content-type": "application/json"
                 },
                 "response": {
-                    accountDetails: {
+                    "accountDetails": {
                         "id": "D295024",
                         "memberSince": "15 July 2012",
                         "cardHolderType": "G",
@@ -223,27 +225,30 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
     }
 ```
 
-## Capture Fetch data ( >= Version 1.2.0)
-Capturing fetch data is enabled by default. This function will be automatically turned off in browsers which do not support Fetch API.
+## Capturing Fetch data (version 1.2.0+)
+Capturing Fetch data is enabled by default. This functionality is automatically turned off in browsers which do not support Fetch API.
 
-The same filtering configuration is applicable to both XHR and Fetch data capture.
+The filter configurations described for XHR are also applicable to fetch requests.
 
-To disable Fetch data capture or XHR data capture, explicitly add the setting to disable the feature. 
+:warning:If your application is using polyfills to support Fetch then disable this feature as described below since it is not recommended to be used with polyfills.
+
+To disable Fetch data capture or XHR data capture, set the corresponding flags to false in the module configuration.
 ```javascript
     ajaxListener: {
         xhrEnabled: false,
         fetchEnabled: false,
-        ...
+        filters: [
+           ...
     }
 ```
 
 ## TOOLS & REFERENCES
-* [UI Capture SDK Documentation](https://developer.ibm.com/customer-engagement/docs/watson-marketing/ibm-watson-customer-experience-analytics/tealeaf-ui-capture/)
+* [UI Capture SDK Documentation](https://developer.goacoustic.com/acoustic-exp-analytics/docs/tealeaf-ui-capture-overview)
 * [Online RegEx Tester](https://regex101.com/)
 * [Telerik Fiddler](https://www.telerik.com/fiddler)
 
 ## ISSUES:
-Report any issues with the Ajax Listener module via [IBM Support](https://www.ibm.com/support/home/) or directly on [Github](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/)
+Report any issues with the Ajax Listener module via [Acoustic Support](https://support.goacoustic.com/) or directly on [Github](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/)
 For a speedy resolution, please follow this template when reporting an issue:
 
 #### Module Version
