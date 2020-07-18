@@ -272,7 +272,7 @@ TLT.addModule("ajaxListener", function (context) {
             xhrMsg.responseHeaders = extractFetchHeaders(fetchResp.headers);
         }
 
-        if (logOptions.responseData && fetchResp.ok) {
+        if (logOptions.responseData) {
             respContentType = fetchResp.headers.get("content-type");
 
             if (respContentType && respContentType.indexOf("application/json") !== -1) {
@@ -551,7 +551,22 @@ TLT.addModule("ajaxListener", function (context) {
         }
 
         xhrEnabled = utils.getValue(config, "xhrEnabled", true);
+
+        // AjaxListener module intercepts XMLHttpRequest object implemented by native browsers
+        // In case that customer's website sets polyfills for early browser version which overrides the native browser implementation,
+        // SDK is not able to apply the interception and might throw exception, thus disable the module
+        if (XMLHttpRequest &&
+                (XMLHttpRequest.toString().indexOf("[native code]") === -1 ||
+                XMLHttpRequest.toString().indexOf("XMLHttpRequest") === -1)) {
+            xhrEnabled = false;
+        }
+
         fetchEnabled = utils.getValue(config, "fetchEnabled", true) && (typeof window.fetch === "function");
+
+        if (fetchEnabled && window.fetch.toString().indexOf("[native code]") === -1) {
+            fetchEnabled = false;
+        }
+
     }
 
     // Return the module's interface object. This contains callback functions which
@@ -586,7 +601,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.2.1"
+        version: "1.2.2"
     };
 
 });
