@@ -17,6 +17,7 @@ For further information on the TLT.logCustomEvent API refer to the [UI Capture S
 **Version 1.2.0+ supports logging of Fetch data.**
 
 **This module has been tested with native browser implementations of XMLHttpRequest and Fetch. It is not recommended to use this module with XMLHttpRequest or Fetch polyfills.**
+Check if your application is overriding these browser APIs by examining the output of `window.XMLHttpRequest` and `window.fetch` in the debug console. If the result does not indicate `[native code]` then your application is overriding these native APIs and may not be able to use the Ajax Listener module.
 
 ## INSTALLATION
 The Ajax Listener module is compatible with UI Capture SDK version 5.5.0 and above. To install the module, copy the module script (ajaxListener.min.js) into your UI Capture SDK JavaScript file after the SDK source and before the configuration/initialization section. The structure of your UI Capture JavaScript file should follow this ordering:
