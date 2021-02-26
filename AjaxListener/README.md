@@ -80,6 +80,7 @@ url | RegEx to match the request URL
 method | RegEx to match the HTTP request method
 status | RegEx to match the HTTP response status
 
+### Optional Data Logging
 To fine tune the XHR data being logged, each filter rule can be optionally associated with a data logging criteria specifying which XHR data should be logged when the XHR request matches the filter rule. The following additional data can be logged for each XHR request:
 
 Optional Data Logging | Description
