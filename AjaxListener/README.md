@@ -250,7 +250,7 @@ To disable Fetch data capture or XHR data capture, set the corresponding flags t
 * [Telerik Fiddler](https://www.telerik.com/fiddler)
 
 ## ISSUES:
-Report any issues with the Ajax Listener module via [Acoustic Support](https://support.goacoustic.com/) or directly on [Github](https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/issues/)
+Report any issues with the Ajax Listener module via [Acoustic Support](https://support.goacoustic.com/) or directly on [Github](https://github.com/acoustic-analytics/UICaptureSDK-Modules/issues/)
 For a speedy resolution, please follow this template when reporting an issue:
 
 #### Module Version
