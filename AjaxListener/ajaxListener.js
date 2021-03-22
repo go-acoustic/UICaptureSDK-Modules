@@ -8,7 +8,7 @@
  * prohibited.
  *
  * README
- * https://github.com/ibm-watson-cxa/UICaptureSDK-Modules/tree/master/AjaxListener/README.md
+ * https://github.com/acoustic-analytics/UICaptureSDK-Modules/tree/master/AjaxListener/README.md
  */
 
 /**
