@@ -1,3 +1,10 @@
+## 1.3.0
+- Implemented a URL blocklist feature to prevent requests matching the specified URL pattern from being logged.
+- Add a configuration flag `skipSafetyCheck` to bypass the check for native fetch/XHR API ([#11](https://github.com/acoustic-analytics/UICaptureSDK-Modules/issues/11))
+- `location.href` is added to the AjaxListener messages.
+- Include message type `3` parameter when invoking the URL normalization function from the Ajax Listener module.
+- Fixed an issue where JSON in the fetch request was not parsed.
+
 ## 1.2.2
 - Add checking for native implementation of XHR and fetch api to prevent unexpected exceptions, mostly happening in old version browsers with polyfills
   ([#10](https://github.com/acoustic-analytics/UICaptureSDK-Modules/issues/10))
