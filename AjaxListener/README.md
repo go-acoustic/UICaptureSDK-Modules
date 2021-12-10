@@ -53,10 +53,15 @@ status | HTTP response status code
 statusText | HTTP response status text e.g. "OK"
 async | True for an asynchronous request
 ajaxResponseTime | milliseconds from request send to complete (readyState == 4)
+locationHref | `document.location.href` when the request is sent
 
 The Ajax Listener module can also be configured to selectively log XHR requests and responses by adding the following section to the `modules` configuration of the UI Capture SDK:
 ```javascript
     ajaxListener: {
+        urlBlocklist: [
+            { regex: "brilliantcollector\\.com" },
+            { regex: "tealeaftarget", flags: "i" }
+        ],
         filters: [
             {
                 method: { regex: "GET", flags: "i" },
@@ -72,7 +77,9 @@ The Ajax Listener module can also be configured to selectively log XHR requests 
         ]
     }
 ```
-The `filters` array can contain one or more filter rules. Each rule can optionally specify any combination of the following filter properties in RegEx format:
+The optional `urlBlocklist` array can contain one or more URL block rules. Each rule specifies a [RegEx](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) pattern which prevents the matching request from being logged.
+
+The optional `filters` array can contain one or more filter rules. Each rule can optionally specify any combination of the following filter properties in RegEx format:
 
 Filter Property | Description
 --------------- | -----------
@@ -113,6 +120,7 @@ When specifying multiple filter rules, remember to place the more restrictive/sp
 ```
 
 #### Logging all XHR requests except those made to the Acoustic Cloud
+:warning:This method is deprecated. Use the `urlBlocklist` feature instead.
 ```javascript
     {
         url: { regex: "^((?!(brilliantcollector\\.com)).)*$", flags: "i" },
@@ -172,15 +180,16 @@ The data logged by the Ajax Listener is as follows:
 
 Property | Optional | Description
 -------- | -------- | -----------
-method | no | XHR request method e.g. GET, POST etc.
-requestURL | no | XHR request url host and path
-async | no | Boolean flag indicating if the XHR request was asynchronous.
-status | no | HTTP status code
-statusText | no | HTTP status text
+method | no | Request method e.g. GET, POST etc.
+requestURL | no | Request url host and path
+async | no | Boolean flag indicating if the request was asynchronous.
+status | no | HTTP response status code
+statusText | no | HTTP response status text
 ajaxResponseTime | no | Milliseconds from request send to request complete (readyState = 4)
+locationHref | no | `document.location.href` value when the request was sent.
 requestHeaders | yes | Object containing name-value pairs of HTTP headers that are set using the setRequestHeader() method.
 responseHeaders | yes | Object containing name-value pairs of HTTP headers sent with the response.
-request | yes | String containing the request data passed to the send method. If the data is valid JSON then request contains the parsed JSON.
+request | yes | String containing the request data. If the data is valid JSON then request contains the parsed JSON.
 response | yes | String containing the response data. If the data is valid JSON then response contains the parsed JSON.
 
 Following is an example of the XHR data that is logged by the Ajax Listener in the Tealeaf session:
@@ -200,12 +209,13 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
                 "statusText": "OK",
                 "async": true,
                 "ajaxResponseTime": 285,
+                "locationHref": "https://www.acoustic.com/support/login",
                 "requestHeaders": {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CustomerId": "D295024"
                 },
                 "responseHeaders": {
-                    "date": "Thu, 22 Feb 2018 01:38:07 GMT",
+                    "date": "Thu, 22 Feb 2020 01:38:07 GMT",
                     "cache-control": "private",
                     "server": "Microsoft-IIS/10.0",
                     "x-powered-by": "ASP.NET",
@@ -216,10 +226,9 @@ Following is an example of the XHR data that is logged by the Ajax Listener in t
                     "accountDetails": {
                         "id": "D295024",
                         "memberSince": "15 July 2012",
-                        "cardHolderType": "G",
+                        "customerType": "G",
                         "electronicDelivery": false,
-                        "currencyUnit": "USD",
-                        "currencyAmount": 423.15
+                        "currencyUnit": "USD"
                     }
                 }
             }
@@ -243,6 +252,19 @@ To disable Fetch data capture or XHR data capture, set the corresponding flags t
            ...
     }
 ```
+
+## Bypassing the safety check for native implementation of XHR and fetch
+This module has been tested on modern browsers that provide native support for `XMLHttpRequest` and `fetch`. This module implements a safety check which automatically disables logging if it detects that the native API is not available or is overridden by 3rd party script. To bypass this safety check, set `skipSafetyCheck` to true in the module configuration.
+```javascript
+    ajaxListener: {
+        skipSafetyCheck: true,
+        xhrEnabled: true,
+        fetchEnabled: true,
+        filters: [
+           ...
+    }
+```
+:warning:Always perform adequate testing and verification of correct operation before deploying into production.
 
 ## TOOLS & REFERENCES
 * [UI Capture SDK Documentation](https://developer.goacoustic.com/acoustic-exp-analytics/docs/tealeaf-ui-capture-overview)
