@@ -1,5 +1,5 @@
 /*!
- * Copyright (c) 2020 Acoustic, L.P. All rights reserved.
+ * Copyright (c) 2021 Acoustic, L.P. All rights reserved.
  *
  * NOTICE: This file contains material that is confidential and proprietary to
  * Acoustic, L.P. and/or other developers. No license is granted under any intellectual or
@@ -8,7 +8,7 @@
  * prohibited.
  *
  * README
- * https://github.com/acoustic-analytics/UICaptureSDK-Modules/tree/master/AjaxListener/README.md
+ * https://github.com/acoustic-analytics/UICaptureSDK-Modules/blob/master/AjaxListener/README.md
  */
 
 /**
@@ -29,6 +29,30 @@ TLT.addModule("ajaxListener", function (context) {
         xhrEnabled,
         fetchEnabled,
         utils = context.utils;
+
+    /**
+     * Test if the given url matches an entry in the URL blocklist.
+     * @param {String} url The value to be matched
+     * @returns {Boolean} true if the url matches an entry in the URL blocklist. false otherwise.
+     */
+    function isUrlBlocked(url) {
+        var i, len,
+            blockRule,
+            matchFound = false,
+            urlBlocklist = moduleConfig.urlBlocklist;
+
+        // Sanity check
+        if (!url || !urlBlocklist) {
+            return matchFound;
+        }
+
+        for (i = 0, len = urlBlocklist.length; !matchFound && i < len; i += 1) {
+            blockRule = urlBlocklist[i];
+            matchFound = blockRule.cRegex.test(url);
+        }
+
+        return matchFound;
+    }
 
     /**
      * Search the list of filters and return the 1st filter that completely
@@ -129,14 +153,14 @@ TLT.addModule("ajaxListener", function (context) {
         dummyLink.href = xhr.tListener.url;
 
         xhrMsg.originalURL = dummyLink.host + (dummyLink.pathname[0] === "/" ? "" : "/") + dummyLink.pathname;
-        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(xhrMsg.originalURL) : xhrMsg.originalURL;
+        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(xhrMsg.originalURL, 3) : xhrMsg.originalURL;
         xhrMsg.description = "Full Ajax Monitor " + xhrMsg.requestURL;
         xhrMsg.method = xhr.tListener.method;
         xhrMsg.status = xhr.status;
         xhrMsg.statusText = xhr.statusText || "";
         xhrMsg.async = xhr.tListener.async;
         xhrMsg.ajaxResponseTime = xhr.tListener.end - xhr.tListener.start;
-
+        xhrMsg.locationHref = context.normalizeUrl(document.location.href, 3);
 
         if (logOptions.requestHeaders) {
             xhrMsg.requestHeaders = xhr.tListener.reqHeaders;
@@ -206,15 +230,30 @@ TLT.addModule("ajaxListener", function (context) {
      * Extract body of request based on types
      * supported types are string, json object, FormData object.
      * the rest types are returned as it is.
-     * @param {Object} body fecth request body
+     * @param {Object} body fetch request body
      * @return {Object} Return a string, or an object
      */
     function extractFetchRequestBody(body) {
-        if (typeof body === "object" && body.toString().indexOf("FormData") !== -1) {
-            return getEntries(body);
+        var retVal = body;
+
+        // Sanity check
+        if (!body) {
+            return retVal;
         }
 
-        return body;
+        if (typeof body === "object" && body.toString().indexOf("FormData") !== -1) {
+            // Parse Form data
+            retVal = getEntries(body);
+        } else if (typeof body === "string") {
+            try {
+                // Parse as JSON
+                retVal = JSON.parse(body);
+            } catch (e) {
+                retVal = body;
+            }
+        }
+
+        return retVal;
     }
 
     /**
@@ -238,14 +277,13 @@ TLT.addModule("ajaxListener", function (context) {
             },
             dummyLink,
             xhrMsg = msg.customEvent.data,
-            respText,
             respContentType;
 
         dummyLink = document.createElement("a");
         dummyLink.href = fetchReq.url;
 
         xhrMsg.originalURL = dummyLink.host + (dummyLink.pathname[0] === "/" ? "" : "/") + dummyLink.pathname;
-        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(xhrMsg.originalURL) : xhrMsg.originalURL;
+        xhrMsg.requestURL = context.normalizeUrl ? context.normalizeUrl(xhrMsg.originalURL, 3) : xhrMsg.originalURL;
         xhrMsg.description = "Full Ajax Monitor " + xhrMsg.requestURL;
         xhrMsg.method = fetchReq.initData.method;
         xhrMsg.status = fetchResp.status;
@@ -253,7 +291,7 @@ TLT.addModule("ajaxListener", function (context) {
         xhrMsg.async = true;
         xhrMsg.ajaxResponseTime = fetchReq.end - fetchReq.start;
         xhrMsg.responseType = fetchResp.type;
-
+        xhrMsg.locationHref = context.normalizeUrl(document.location.href, 3);
 
         if (logOptions.requestHeaders) {
             //check if header data is encapsulated as "Headers" object which cannot be directly accessed
@@ -343,6 +381,10 @@ TLT.addModule("ajaxListener", function (context) {
                 responseData: false
             };
 
+        if (isUrlBlocked(url)) {
+            return;
+        }
+
         filter = getMatchingFilter(url, method, status);
         if (filter) {
             if (filter.log) {
@@ -386,13 +428,13 @@ TLT.addModule("ajaxListener", function (context) {
         var savedSetRequestHeader = xhr.setRequestHeader;
 
         xhr.setRequestHeader = function (header, value) {
-            var xhr = this,
-                tListener = xhr.tListener;
+            var _xhr = this,
+                tListener = _xhr.tListener;
 
             if (header && header.length) {
                 tListener.reqHeaders[header] = value;
             }
-            return savedSetRequestHeader.apply(xhr, arguments);
+            return savedSetRequestHeader.apply(_xhr, arguments);
         };
     }
 
@@ -406,15 +448,15 @@ TLT.addModule("ajaxListener", function (context) {
         var savedSend = xhr.send;
 
         xhr.send = function (data) {
-            var xhr = this,
-                tListener = xhr.tListener;
+            var _xhr = this,
+                tListener = _xhr.tListener;
 
             if (data) {
                 // TODO: Add additional checks to ensure data is serializable.
                 tListener.reqData = data;
             }
             tListener.start = Date.now();
-            return savedSend.apply(xhr, arguments);
+            return savedSend.apply(_xhr, arguments);
         };
     }
 
@@ -447,7 +489,7 @@ TLT.addModule("ajaxListener", function (context) {
     function xhrOpenHook(method, url, async) {
         var xhr = this;
 
-        if (moduleLoaded) {
+        if (moduleLoaded && !isUrlBlocked(url)) {
             xhr.addEventListener("readystatechange", readyStateChangeHandler);
 
             xhr.tListener = {
@@ -539,7 +581,8 @@ TLT.addModule("ajaxListener", function (context) {
     function processConfig(config) {
         var i, len,
             filter,
-            filters = [];
+            filters = [],
+            skipSafetyCheck = utils.getValue(config, "skipSafetyCheck", false);
 
         if (config && config.filters) {
             filters = config.filters;
@@ -550,23 +593,29 @@ TLT.addModule("ajaxListener", function (context) {
             utils.forEach([filter.url, filter.method, filter.status], cacheRegex);
         }
 
-        xhrEnabled = utils.getValue(config, "xhrEnabled", true);
+        if (config && config.urlBlocklist) {
+            utils.forEach(config.urlBlocklist, cacheRegex);
+        }
 
-        // AjaxListener module intercepts XMLHttpRequest object implemented by native browsers
-        // In case that customer's website sets polyfills for early browser version which overrides the native browser implementation,
-        // SDK is not able to apply the interception and might throw exception, thus disable the module
-        if (XMLHttpRequest &&
+        xhrEnabled = utils.getValue(config, "xhrEnabled", true) && window.XMLHttpRequest;
+
+        /**
+         * AjaxListener module intercepts native XMLHttpRequest object implemented by browsers
+         * Apps that use polyfills or other scripts which override the native browser implementation,
+         * the module is disabled as a safety precaution.
+         */
+        if (xhrEnabled && !skipSafetyCheck &&
                 (XMLHttpRequest.toString().indexOf("[native code]") === -1 ||
                 XMLHttpRequest.toString().indexOf("XMLHttpRequest") === -1)) {
             xhrEnabled = false;
         }
 
-        fetchEnabled = utils.getValue(config, "fetchEnabled", true) && (typeof window.fetch === "function");
+        fetchEnabled = utils.getValue(config, "fetchEnabled", true) && window.fetch;
 
-        if (fetchEnabled && window.fetch.toString().indexOf("[native code]") === -1) {
+        if (fetchEnabled && !skipSafetyCheck &&
+                window.fetch.toString().indexOf("[native code]") === -1) {
             fetchEnabled = false;
         }
-
     }
 
     // Return the module's interface object. This contains callback functions which
@@ -601,7 +650,7 @@ TLT.addModule("ajaxListener", function (context) {
             }
         },
 
-        version: "1.2.2"
+        version: "1.3.0"
     };
 
 });
