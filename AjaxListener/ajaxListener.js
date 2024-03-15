@@ -8,7 +8,7 @@
  * prohibited.
  *
  * README
- * https://github.com/acoustic-analytics/UICaptureSDK-Modules/blob/master/AjaxListener/README.md
+ * https://github.com/go-acoustic/UICaptureSDK-Modules/blob/master/AjaxListener/README.md
  */
 
 /**
